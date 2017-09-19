@@ -21,6 +21,29 @@ class DiceLoss(object):
 
 dice_loss = DiceLoss(beta=1.)
 
+def iou(y_true, y_pred):
+    y_true_f = K.batch_flatten(y_true)
+    y_pred_f = K.batch_flatten(y_pred)
+    intersection = K.sum(K.round(K.clip(y_true_f * y_pred_f, 0, 1)), axis=-1)
+    union = K.sum(K.round(K.clip(y_true_f, 0, 1)), axis=-1) + \
+        K.sum(K.round(K.clip(y_true_f, 0, 1)), axis=-1)
+    score = (intersection + K.epsilon()) / (union + K.epsilon())
+    return score
+
+class Sensitivity:
+    def __init__(self, thresh):
+        self.thresh = 10**(-thresh)
+        self.__name__ = 'sensi_' + str(thresh)
+
+    def __call__(self, y_true, y_pred):
+        y_true_f = K.batch_flatten(y_true)
+        y_pred_f = K.batch_flatten(y_pred)
+        target = K.sum(y_true_f * y_pred_f, axis=-1) > self.thresh
+        target_count = K.sum(K.cast(target, K.floatx()))
+        total_area = K.sum(y_true_f, axis=-1) > K.epsilon()
+        truth_count = K.sum(K.cast(total_area, K.floatx()))
+        return target_count / truth_count
+
 
 def precision(y_true, y_pred):
     '''Calculates the precision, a metric for multi-label classification of
