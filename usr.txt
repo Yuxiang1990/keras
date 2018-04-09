@@ -1,0 +1,15 @@
+# more gpu
+parallel=2
+from keras.models import Model
+from keras.utils import multi_gpu_model
+# define model
+
+def get_parallel_model(weights):
+  model = Model(input, output)
+  parallel_model = multi_gpu_model(model, gpus=parallel)
+  parallel_model.compile(loss=loss, optimizer=optimizer,metrics=metrics, loss_weights=loss_weights)
+  if weights is not None:
+    parallel_model.load_weights(weights, by_name=True)
+  return  parallel_model
+  
+  
