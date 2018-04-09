@@ -1,5 +1,34 @@
 import keras.backend as K
 
+def focal_loss(gamma=2, alpha=2):
+    def focal_loss_fixed(y_true, y_pred):
+        if (K.backend() == "tensorflow"):
+            import tensorflow as tf
+            pt = tf.where(tf.equal(y_true, 1), y_pred, 1 - y_pred)
+            return -K.sum(alpha * K.pow(1. - pt, gamma) * K.log(pt))
+        if (K.backend() == "theano"):
+            import theano.tensor as T
+            pt = T.where(T.eq(y_true, 1), y_pred, 1 - y_pred)
+            return -K.sum(alpha * K.pow(1. - pt, gamma) * K.log(pt))
+    return focal_loss_fixed
+
+class instanceloss(object):
+    def __init__(self, beta=1., smooth=1., alpha=5.):
+        self.beta = beta
+        self.smooth = smooth
+        self.alpha = alpha
+        self.__name__ = 'dice_loss_' + str(int(beta * 100))
+
+    def __call__(self, y_true, y_pred):
+        bb = self.beta * self.beta
+        y_true_f = K.batch_flatten(y_true)
+        y_pred_f = K.batch_flatten(y_pred)
+        intersection = (1 + bb) * K.sum(y_true_f * y_pred_f, axis=-1)
+        union = bb * K.sum(y_true_f, axis=-1) + K.sum(y_pred_f, axis=-1)
+        return -(intersection + self.smooth) / (union + self.alpha * self.smooth)
+    
+instance_loss = instanceloss(beta=1., smooth=1., alpha=5.)
+
 
 class DiceLoss(object):
     def __init__(self, beta=1., smooth=1.):
