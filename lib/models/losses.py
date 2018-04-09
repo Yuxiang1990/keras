@@ -1,4 +1,5 @@
 import keras.backend as K
+import tensorflow as tf
 
 def focal_loss(gamma=2, alpha=2):
     def focal_loss_fixed(y_true, y_pred):
@@ -125,3 +126,27 @@ def fmeasure(y_true, y_pred):
     '''Calculates the f-measure, the harmonic mean of precision and recall.
     '''
     return fbeta_score(y_true, y_pred, beta=1)
+
+#new add input with default Nan for loss calc
+class categorical_loss_withnan:
+    def __init__(self):
+        self.__name__ = "categorical_loss_withnan"
+
+    def __call__(self, y_true, y_pred):
+        mask = K.cast(K.sum(y_true, axis=-1), "bool")
+        y_true = tf.boolean_mask(y_true, mask)
+        y_pred = tf.boolean_mask(y_pred, mask)
+        categorical_loss = K.categorical_crossentropy(y_true, y_pred)
+        return K.mean(categorical_loss, axis=-1)
+    
+class binary_crossentropy_withnan:
+    def __init__(self):
+        self.__name__ = "binary_crossentropy_withnan"
+
+    def __call__(self, y_true, y_pred):
+        mask = K.cast(K.not_equal(y_true, 2), "bool")
+        y_true = tf.boolean_mask(y_true, mask)
+        y_pred = tf.boolean_mask(y_pred, mask)
+        return K.mean(K.binary_crossentropy(y_true, y_pred), axis=-1)
+    
+
